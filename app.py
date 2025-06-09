@@ -8,34 +8,44 @@ MPStats Analyzer - Главное приложение
 
 import streamlit as st
 import pandas as pd
+import numpy as np
+import plotly.express as px
+import plotly.graph_objects as go
+from typing import Dict, Optional
 import sys
 import os
-from typing import Dict, Optional
 
 # Добавляем пути для импорта модулей
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-# Импорты компонентов
-from components.sidebar import Sidebar
-from components.file_uploader import FileUploader
-from components.metrics_dashboard import MetricsDashboard
-
-# Импорты ядра системы
-from core.file_processor import FileProcessor
-from core.data_validator import DataValidator
-from core.scoring_engine import ScoringEngine
-
-# Импорты анализаторов
-from analyzers.trend_analyzer import TrendAnalyzer
-from analyzers.query_analyzer import QueryAnalyzer
-from analyzers.price_analyzer import PriceAnalyzer
-from analyzers.stock_analyzer import StockAnalyzer
-from analyzers.ads_analyzer import AdsAnalyzer
-
-# Импорты утилит
-from utils.formatters import ReportFormatter
-from utils.constants import VERSION_INFO
-from config import APP_TITLE, APP_ICON
+# Безопасные импорты с обработкой ошибок
+try:
+    from components.sidebar import Sidebar
+    from components.file_uploader import FileUploader  
+    from components.metrics_dashboard import MetricsDashboard
+    
+    from core.file_processor import FileProcessor
+    from core.data_validator import DataValidator
+    from core.scoring_engine import ScoringEngine
+    
+    from analyzers.trend_analyzer import TrendAnalyzer
+    from analyzers.query_analyzer import QueryAnalyzer
+    from analyzers.price_analyzer import PriceAnalyzer
+    from analyzers.stock_analyzer import StockAnalyzer
+    from analyzers.ads_analyzer import AdsAnalyzer
+    
+    from utils.formatters import ReportFormatter
+    from utils.constants import VERSION_INFO
+    from config import APP_TITLE, APP_ICON
+    
+    IMPORTS_SUCCESSFUL = True
+except ImportError as e:
+    st.error(f"Ошибка импорта: {e}")
+    IMPORTS_SUCCESSFUL = False
+    # Используем базовые значения
+    APP_TITLE = "MPStats Analyzer"
+    APP_ICON = "📊"
+    VERSION_INFO = {"version": "1.0.0"}
 
 # Конфигурация страницы
 st.set_page_config(
@@ -54,6 +64,9 @@ st.set_page_config(
 @st.cache_resource
 def init_components():
     """Инициализация основных компонентов"""
+    if not IMPORTS_SUCCESSFUL:
+        return None
+        
     return {
         'sidebar': Sidebar(),
         'file_uploader': FileUploader(),
