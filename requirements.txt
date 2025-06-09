@@ -1,0 +1,11 @@
+streamlit==1.28.0
+pandas==2.0.3
+numpy==1.24.3
+plotly==5.17.0
+openpyxl==3.1.2
+streamlit-aggrid==0.3.4
+streamlit-option-menu==0.3.6
+streamlit-card==0.0.61
+xlsxwriter==3.1.9
+python-dateutil==2.8.2
+datetime
