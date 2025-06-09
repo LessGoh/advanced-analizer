@@ -119,6 +119,12 @@ class Sidebar:
                 del st.session_state.scoring_results
             st.rerun()
         
+        # Кнопка перехода к загрузке файлов
+        if not st.session_state.loaded_data:
+            if st.button("📤 Загрузить файлы", use_container_width=True, type="primary"):
+                st.session_state.force_upload_page = True
+                st.rerun()
+        
         # Кнопка экспорта результатов
         if st.button("📊 Экспорт отчета", use_container_width=True, disabled=('scoring_results' not in st.session_state)):
             st.session_state.show_export_modal = True
