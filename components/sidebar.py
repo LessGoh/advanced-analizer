@@ -86,7 +86,8 @@ class Sidebar:
         if 'loaded_data' not in st.session_state or not st.session_state.loaded_data:
             st.info("Файлы не загружены")
             if st.button("📤 Загрузить файлы", use_container_width=True):
-                st.switch_page("Главный дашборд")
+                st.session_state.current_page = "Главный дашборд"
+                st.rerun()
             return
         
         # Отображаем статус каждого типа файла
