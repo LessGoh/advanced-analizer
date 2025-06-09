@@ -126,7 +126,8 @@ class FileUploader:
                 
                 # Кнопка перехода к анализу
                 if st.button("🚀 Начать анализ", type="primary", use_container_width=True):
-                    st.switch_page("Итоговый скоринг")
+                    st.session_state.current_page = "Итоговый скоринг"
+                    st.rerun()
                 
                 return loaded_data
                 
@@ -221,7 +222,8 @@ class FileUploader:
         
         with col2:
             if st.button("📊 Открыть анализ", use_container_width=True, type="primary"):
-                st.switch_page("Итоговый скоринг")
+                st.session_state.current_page = "Итоговый скоринг"
+                st.rerun()
         
         with col3:
             if st.button("📋 Показать валидацию", use_container_width=True):
