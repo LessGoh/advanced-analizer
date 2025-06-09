@@ -90,6 +90,9 @@ def initialize_session_state():
     
     if 'current_page' not in st.session_state:
         st.session_state.current_page = "Главный дашборд"
+    
+    if 'force_upload_page' not in st.session_state:
+        st.session_state.force_upload_page = False
 
 def run_analysis(loaded_data: Dict) -> Dict:
     """Запуск полного анализа данных"""
@@ -201,6 +204,10 @@ def calculate_scoring(loaded_data: Dict) -> Dict:
 def render_main_dashboard():
     """Рендер главного дашборда"""
     
+    if not IMPORTS_SUCCESSFUL:
+        st.error("❌ Ошибка загрузки модулей. Проверьте зависимости.")
+        return
+    
     components = init_components()
     
     st.markdown('<h1 class="main-header">📊 MPStats Analyzer</h1>', unsafe_allow_html=True)
@@ -210,10 +217,13 @@ def render_main_dashboard():
     if not st.session_state.loaded_data:
         # Если данных нет - показываем загрузчик
         st.markdown("---")
+        st.markdown("### 📤 Загрузите файлы для начала анализа")
+        
         uploaded_files = components['file_uploader'].render()
         
-        if uploaded_files:
-            # Если файлы загружены, запускаем анализ
+        if uploaded_files and st.session_state.loaded_data:
+            # Если файлы загружены, показываем кнопку запуска анализа
+            st.markdown("---")
             if st.button("🚀 Запустить анализ", type="primary", use_container_width=True):
                 with st.spinner("🔄 Анализируем данные..."):
                     
@@ -549,11 +559,20 @@ def main():
     
     # Инициализация
     initialize_session_state()
-    components = init_components()
     
-    # Боковая панель
-    selected_page = components['sidebar'].render()
-    st.session_state.current_page = selected_page
+    # Проверяем принудительный переход к загрузке
+    if st.session_state.get('force_upload_page', False):
+        selected_page = "Главный дашборд"  # Покажем загрузчик на главной странице
+        st.session_state.force_upload_page = False
+    else:
+        components = init_components()
+        if components:
+            # Боковая панель
+            selected_page = components['sidebar'].render()
+            st.session_state.current_page = selected_page
+        else:
+            st.error("❌ Ошибка инициализации компонентов")
+            return
     
     # Роутинг страниц
     if selected_page == "Главный дашборд":
@@ -592,7 +611,7 @@ def main():
     st.markdown("---")
     st.markdown(f"""
     <div style="text-align: center; color: #666; font-size: 0.8rem;">
-        MPStats Analyzer v{VERSION_INFO['version']} | 
+        MPStats Analyzer v{VERSION_INFO['version'] if IMPORTS_SUCCESSFUL else '1.0.0'} | 
         Made with ❤️ for marketplace analytics
     </div>
     """, unsafe_allow_html=True)
