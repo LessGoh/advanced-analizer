@@ -7,6 +7,21 @@ MPStats Analyzer - Главное приложение
 """
 
 import streamlit as st
+
+# ВАЖНО: st.set_page_config() должен быть первой командой Streamlit
+st.set_page_config(
+    page_title="MPStats Analyzer",
+    page_icon="📊",
+    layout="wide",
+    initial_sidebar_state="expanded",
+    menu_items={
+        'Get Help': 'https://github.com/mpstats-analyzer/help',
+        'Report a bug': 'https://github.com/mpstats-analyzer/issues',
+        'About': "MPStats Analyzer v1.0.0"
+    }
+)
+
+# Теперь импортируем остальные модули
 import pandas as pd
 import numpy as np
 import plotly.express as px
@@ -46,19 +61,6 @@ except ImportError as e:
     APP_TITLE = "MPStats Analyzer"
     APP_ICON = "📊"
     VERSION_INFO = {"version": "1.0.0"}
-
-# Конфигурация страницы
-st.set_page_config(
-    page_title=APP_TITLE,
-    page_icon=APP_ICON,
-    layout="wide",
-    initial_sidebar_state="expanded",
-    menu_items={
-        'Get Help': 'https://github.com/mpstats-analyzer/help',
-        'Report a bug': 'https://github.com/mpstats-analyzer/issues',
-        'About': f"MPStats Analyzer v{VERSION_INFO['version']}"
-    }
-)
 
 # Инициализация компонентов
 @st.cache_resource
