@@ -171,22 +171,41 @@ class DataValidator:
             
             if missing_cols:
                 errors.append(f"Отсутствуют обязательные колонки: {', '.join(missing_cols)}")
+                return {
+                    "valid": False,
+                    "warnings": warnings,
+                    "errors": errors,
+                    "records_count": len(df)
+                }
             
             # Проверяем ценовые диапазоны
             if all(col in df.columns for col in ["От", "До"]):
-                invalid_ranges = (df["От"] >= df["До"]).sum()
-                if invalid_ranges > 0:
-                    errors.append(f"Найдено {invalid_ranges} некорректных ценовых диапазонов (От >= До)")
+                # Проверяем, что значения числовые
+                non_numeric_from = df['От'].isna().sum()
+                non_numeric_to = df['До'].isna().sum()
                 
-                # Проверяем перекрытия диапазонов
-                df_sorted = df.sort_values("От")
-                overlaps = 0
-                for i in range(len(df_sorted) - 1):
-                    if df_sorted.iloc[i]["До"] > df_sorted.iloc[i + 1]["От"]:
-                        overlaps += 1
+                if non_numeric_from > 0:
+                    errors.append(f"Найдено {non_numeric_from} нечисловых значений в колонке 'От'")
                 
-                if overlaps > 0:
-                    warnings.append(f"Найдено {overlaps} перекрывающихся ценовых диапазонов")
+                if non_numeric_to > 0:
+                    errors.append(f"Найдено {non_numeric_to} нечисловых значений в колонке 'До'")
+                
+                # Проверяем корректность диапазонов только для числовых значений
+                valid_rows = df.dropna(subset=['От', 'До'])
+                if len(valid_rows) > 0:
+                    invalid_ranges = (valid_rows["От"] >= valid_rows["До"]).sum()
+                    if invalid_ranges > 0:
+                        errors.append(f"Найдено {invalid_ranges} некорректных ценовых диапазонов (От >= До)")
+                    
+                    # Проверяем перекрытия диапазонов
+                    df_sorted = valid_rows.sort_values("От")
+                    overlaps = 0
+                    for i in range(len(df_sorted) - 1):
+                        if df_sorted.iloc[i]["До"] > df_sorted.iloc[i + 1]["От"]:
+                            overlaps += 1
+                    
+                    if overlaps > 0:
+                        warnings.append(f"Найдено {overlaps} перекрывающихся ценовых диапазонов")
             
             # Проверяем выручку на товар
             if "Выручка на товар, ₽" in df.columns:
@@ -200,9 +219,11 @@ class DataValidator:
             
             # Проверяем логическую согласованность
             if all(col in df.columns for col in ["Товары", "Товары с продажами"]):
-                inconsistent = (df["Товары с продажами"] > df["Товары"]).sum()
-                if inconsistent > 0:
-                    errors.append(f"Найдено {inconsistent} сегментов с некорректным соотношением товаров")
+                valid_products_data = df.dropna(subset=["Товары", "Товары с продажами"])
+                if len(valid_products_data) > 0:
+                    inconsistent = (valid_products_data["Товары с продажами"] > valid_products_data["Товары"]).sum()
+                    if inconsistent > 0:
+                        errors.append(f"Найдено {inconsistent} сегментов с некорректным соотношением товаров")
         
         except Exception as e:
             errors.append(f"Ошибка при валидации данных ценовой сегментации: {str(e)}")
@@ -212,7 +233,7 @@ class DataValidator:
             "warnings": warnings,
             "errors": errors,
             "records_count": len(df),
-            "price_range": (df["От"].min(), df["До"].max()) if all(col in df.columns for col in ["От", "До"]) else None
+            "price_range": (df["От"].min(), df["До"].max()) if all(col in df.columns for col in ["От", "До"]) and len(df) > 0 else None
         }
     
     def _validate_days_data(self, df: pd.DataFrame) -> dict:
