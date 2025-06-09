@@ -164,28 +164,65 @@ class FileProcessor:
         """Обработка данных ценовой сегментации"""
         try:
             # Специальная обработка для файлов ценовой сегментации
-            # Часто в этих файлах есть объединенные заголовки
-            if len(df.columns) > 10 and df.iloc[0].isna().any():
+            # В этих файлах первая строка содержит объединенные заголовки
+            
+            # Проверяем, есть ли объединенные заголовки в первой строке
+            if len(df.columns) > 10 and (df.iloc[0].isna().any() or df.iloc[0, 0] == "Диапазон цен"):
                 # Пропускаем первую строку с объединенными заголовками
-                df = df.iloc[1:].reset_index(drop=True)
+                # Используем вторую строку как заголовки
+                if len(df) > 1:
+                    new_headers = df.iloc[1].tolist()
+                    df = df.iloc[2:].reset_index(drop=True)  # Берем данные начиная с 3-й строки
+                    df.columns = new_headers
+                else:
+                    st.warning("⚠️ Файл ценовой сегментации пустой или содержит только заголовки")
+                    return None
+            
+            # Если структура не соответствует ожидаемой, пробуем альтернативный подход
+            if 'От' not in df.columns or 'До' not in df.columns:
+                # Возможно данные начинаются с другой строки
+                for i in range(min(5, len(df))):
+                    if 'От' in str(df.iloc[i].tolist()) or any('От' in str(cell) for cell in df.iloc[i] if pd.notna(cell)):
+                        # Нашли строку с заголовками
+                        headers = df.iloc[i].tolist()
+                        df = df.iloc[i+1:].reset_index(drop=True)
+                        df.columns = headers
+                        break
                 
-                # Устанавливаем правильные названия колонок
-                expected_columns = ['От', 'До', 'Продажи', 'Выручка, ₽', 'Потенциал, ₽', 
-                                  'Упущенная выручка, ₽', 'Упущенная выручка %', 'Товары', 
-                                  'Товары с продажами', 'Бренды', 'Бренды с продажами', 
-                                  'Продавцы', 'Продавцы с продажами', 'Выручка на товар, ₽']
-                
-                if len(df.columns) >= len(expected_columns):
-                    df.columns = expected_columns + list(df.columns[len(expected_columns):])
+                # Если все еще не нашли правильные заголовки
+                if 'От' not in df.columns:
+                    # Используем стандартные заголовки для ценовой сегментации
+                    expected_columns = [
+                        'От', 'До', 'Продажи', 'Выручка, ₽', 'Потенциал, ₽', 
+                        'Упущенная выручка, ₽', 'Упущенная выручка %', 'Товары', 
+                        'Товары с продажами', 'Бренды', 'Бренды с продажами', 
+                        'Продавцы', 'Продавцы с продажами', 'Выручка на товар, ₽'
+                    ]
+                    
+                    if len(df.columns) >= len(expected_columns):
+                        df.columns = expected_columns + list(df.columns[len(expected_columns):])
+                    else:
+                        st.error("❌ Не удалось определить структуру файла ценовой сегментации")
+                        return None
             
             # Удаляем строки с пустыми значениями в ключевых колонках
             df = df.dropna(subset=['От', 'До'])
             
             # Преобразуем числовые колонки
-            numeric_cols = ['От', 'До', 'Продажи', 'Выручка, ₽', 'Товары', 'Товары с продажами', 'Выручка на товар, ₽']
+            numeric_cols = ['От', 'До', 'Продажи', 'Выручка, ₽', 'Товары', 'Товары с продажами']
+            if 'Выручка на товар, ₽' in df.columns:
+                numeric_cols.append('Выручка на товар, ₽')
+            
             for col in numeric_cols:
                 if col in df.columns:
                     df[col] = pd.to_numeric(df[col], errors='coerce')
+            
+            # Удаляем строки где не удалось преобразовать ключевые колонки
+            df = df.dropna(subset=['От', 'До'])
+            
+            if len(df) == 0:
+                st.warning("⚠️ После обработки файл ценовой сегментации оказался пустым")
+                return None
             
             return df
             
