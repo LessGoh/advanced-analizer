@@ -123,7 +123,7 @@ class Charts:
             if not ads_data.empty:
                 fig_ads = px.scatter(
                     ads_data.head(200),  # Ограничиваем для производительности
-                    x='Search cmp avg',
+                    x='Search cpm avg',
                     y='Final price',
                     color='Category position avg',
                     title='Соотношение цены и рекламной ставки'
